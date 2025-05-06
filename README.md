@@ -20,7 +20,9 @@
 		- [Options](#options)
 			- [`--details`](#--details)
 			- [`--format`](#--format)
+			- [`--output-file`](#--output-file)
 			- [`--fix`](#--fix)
+				- [Dry Run Mode](#dry-run-mode)
 			- [`--ignore-pattern`](#--ignore-pattern)
 			- [`--config`](#--config)
 			- [`--ui5-config`](#--ui5-config)
@@ -150,11 +152,20 @@ ui5lint --details
 
 #### `--format`
 
-Choose the output format. Currently, `stylish` (default), `json` and `markdown` are supported.
+Choose the output format. Currently, `stylish` (default), `json`, and `markdown` are supported.
 
 **Example:**
 ```sh
 ui5lint --format json
+```
+
+#### `--output-file`
+
+Save the linter output to a file instead of printing to the console. Works with all output formats.
+
+**Example:**
+```sh
+ui5lint --format json --output-file ./reports/ui5lint-report.json
 ```
 
 #### `--fix`

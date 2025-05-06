@@ -21,6 +21,7 @@ export interface LinterArg {
 	format: string;
 	config?: string;
 	ui5Config?: string;
+	outputFile?: string;
 }
 
 // yargs type definition is missing the "middlewares" property for the CommandModule type
@@ -106,6 +107,10 @@ const lintCommand: FixedCommandModule<object, LinterArg> = {
 				type: "string",
 				choices: ["stylish", "json", "markdown"],
 			})
+			.option("output-file", {
+				describe: "Path to save the linter output to a file",
+				type: "string",
+			})
 			.option("ui5-config", {
 				describe: "Set a custom path for the UI5 Config (default: './ui5.yaml' if that file exists)",
 				type: "string",
@@ -147,6 +152,7 @@ async function handleLint(argv: ArgumentsCamelCase<LinterArg>) {
 		format,
 		config,
 		ui5Config,
+		outputFile,
 	} = argv;
 
 	let profile;
@@ -175,18 +181,37 @@ async function handleLint(argv: ArgumentsCamelCase<LinterArg>) {
 		await writeFile("ui5lint-report.html", await coverageFormatter.format(res, new Date()));
 	}
 
+	let formattedOutput = "";
 	if (format === "json") {
 		const jsonFormatter = new Json();
-		process.stdout.write(jsonFormatter.format(res, details));
-		process.stdout.write("\n");
+		formattedOutput = jsonFormatter.format(res, details);
+		if (!outputFile) {
+			process.stdout.write(formattedOutput);
+			process.stdout.write("\n");
+		}
 	} else if (format === "markdown") {
 		const markdownFormatter = new Markdown();
-		process.stdout.write(markdownFormatter.format(res, details, getVersion(), fix));
-		process.stdout.write("\n");
+		formattedOutput = markdownFormatter.format(res, details, getVersion(), fix);
+		if (!outputFile) {
+			process.stdout.write(formattedOutput);
+			process.stdout.write("\n");
+		}
 	} else if (format === "" || format === "stylish") {
 		const textFormatter = new Text(rootDir);
-		process.stderr.write(textFormatter.format(res, details, fix));
+		formattedOutput = textFormatter.format(res, details, fix);
+		if (!outputFile) {
+			process.stderr.write(formattedOutput);
+		}
 	}
+
+	// Save to file if output file path is specified
+	if (outputFile) {
+		const path = await import("node:path");
+		// Normalize the path for cross-platform compatibility
+		const normalizedPath = path.normalize(outputFile);
+		await writeFile(normalizedPath, formattedOutput);
+	}
+
 	// Stop profiling after CLI finished execution
 	if (profile) {
 		await profile.stop();
